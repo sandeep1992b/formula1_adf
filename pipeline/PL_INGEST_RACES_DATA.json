@@ -341,6 +341,41 @@
 						"type": "DatasetReference"
 					}
 				}
+			},
+			{
+				"name": "act_lookup_update_season_metadata_entry",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "act_ForEach_season_iteration",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzurePostgreSqlSource",
+						"query": {
+							"value": "UPDATE formula1.formula1_metadata_table\nSET status='success',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='RACES_API';\n\nselect job_id from formula1.formula1_metadata_table;",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_POSTGREYS_SQL_DATABASE",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
 			}
 		],
 		"variables": {
