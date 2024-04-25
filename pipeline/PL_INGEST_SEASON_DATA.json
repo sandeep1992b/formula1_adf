@@ -1,0 +1,331 @@
+{
+	"name": "PL_INGEST_SEASON_DATA",
+	"properties": {
+		"description": "This pipeline will ingest season data from ergast API in JSON file format",
+		"activities": [
+			{
+				"name": "act_web1",
+				"description": "This activity will get data from API",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "act_set_var_start_time",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": "http://ergast.com/api/f1/seasons.json"
+				}
+			},
+			{
+				"name": "act_set_limit_variable_value",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "act_web1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "Limit",
+					"value": {
+						"value": "@activity('act_web1').output.MRData.total",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "act_Web2",
+				"type": "WebActivity",
+				"dependsOn": [
+					{
+						"activity": "act_set_limit_variable_value",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"method": "GET",
+					"url": {
+						"value": "@concat('http://ergast.com/api/f1/seasons.json?limit=',variables('Limit'))",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "act_Set_variable_seasons_data",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "act_Web2",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "seasons_data",
+					"value": {
+						"value": "@{activity('act_Web2').output.MRData.SeasonTable.Seasons}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "act_Copy_seasons_data_to_bronze_layer",
+				"type": "Copy",
+				"dependsOn": [
+					{
+						"activity": "act_Set_variable_seasons_data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "DelimitedTextSource",
+						"additionalColumns": [
+							{
+								"name": "my_column",
+								"value": {
+									"value": "@variables('seasons_data')",
+									"type": "Expression"
+								}
+							}
+						],
+						"storeSettings": {
+							"type": "AzureBlobFSReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "DelimitedTextReadSettings"
+						}
+					},
+					"sink": {
+						"type": "DelimitedTextSink",
+						"storeSettings": {
+							"type": "AzureBlobFSWriteSettings"
+						},
+						"formatSettings": {
+							"type": "DelimitedTextWriteSettings",
+							"quoteAllText": true,
+							"fileExtension": ".txt"
+						}
+					},
+					"enableStaging": false,
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "my_column",
+									"type": "String"
+								},
+								"sink": {
+									"type": "String",
+									"physicalType": "String",
+									"ordinal": 1
+								}
+							}
+						],
+						"typeConversion": true,
+						"typeConversionSettings": {
+							"allowDataTruncation": true,
+							"treatBooleanAsNumber": false
+						}
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "DS_SOURCE_TEMP_TXT_DATA",
+						"type": "DatasetReference"
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "DS_SINK_SEASONS_DATA",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "act_set_var_start_time",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "start_time",
+					"value": {
+						"value": "@utcNow('yyyy-MM-dd HH:mm:ss')",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "act_insert_lookup_metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "act_Set_variable_seasons_data",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzurePostgreSqlSource",
+						"query": {
+							"value": "INSERT INTO formula1.formula1_metadata_table (job_id,job_name,task_name,status,start_time) VALUES ('@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}','PL_INGEST_API_DATA','SEASON_API','In-Progress','@{variables('start_time')}');\n\nselect job_id from formula1.formula1_metadata_table;",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_POSTGREYS_SQL_DATABASE",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "act_lookup_update_season_metadata_entry",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "act_Copy_seasons_data_to_bronze_layer",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzurePostgreSqlSource",
+						"query": {
+							"value": "UPDATE formula1.formula1_metadata_table\nSET status='success',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='SEASON_API';\n\nselect job_id from formula1.formula1_metadata_table;",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_POSTGREYS_SQL_DATABASE",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "act_lookup_update_season_metadata_entry_copy1",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "act_Copy_seasons_data_to_bronze_layer",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzurePostgreSqlSource",
+						"query": {
+							"value": "UPDATE formula1.formula1_metadata_table\nSET status='failed',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='SEASON_API';\n\nselect job_id from formula1.formula1_metadata_table;",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_POSTGREYS_SQL_DATABASE",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			}
+		],
+		"variables": {
+			"Limit": {
+				"type": "String"
+			},
+			"seasons_data": {
+				"type": "String"
+			},
+			"start_time": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "API_Ingestion_Pipelines"
+		},
+		"annotations": []
+	}
+}
