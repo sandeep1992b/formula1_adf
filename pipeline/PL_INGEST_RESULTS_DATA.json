@@ -152,12 +152,24 @@
 											},
 											"sink": {
 												"type": "String",
+												"physicalType": "String",
 												"ordinal": 1
 											}
 										}
-									]
+									],
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
 								}
 							},
+							"inputs": [
+								{
+									"referenceName": "DS_SOURCE_TEMP_TXT_DATA",
+									"type": "DatasetReference"
+								}
+							],
 							"outputs": [
 								{
 									"referenceName": "DS_SINK_RACES_RESULTS_DATA",
