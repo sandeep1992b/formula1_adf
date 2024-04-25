@@ -5,7 +5,14 @@
 			{
 				"name": "act_Web1",
 				"type": "WebActivity",
-				"dependsOn": [],
+				"dependsOn": [
+					{
+						"activity": "act_set_var_start_time",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
 				"policy": {
 					"timeout": "0.12:00:00",
 					"retry": 0,
@@ -283,6 +290,23 @@
 						}
 					]
 				}
+			},
+			{
+				"name": "act_set_var_start_time",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "start_time",
+					"value": {
+						"value": "@utcNow('yyyy-MM-dd HH:mm:ss')",
+						"type": "Expression"
+					}
+				}
 			}
 		],
 		"variables": {
@@ -296,6 +320,9 @@
 				"type": "String"
 			},
 			"race_results_data": {
+				"type": "String"
+			},
+			"start_time": {
 				"type": "String"
 			}
 		},
