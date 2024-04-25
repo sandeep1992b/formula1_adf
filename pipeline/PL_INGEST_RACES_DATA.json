@@ -307,6 +307,40 @@
 						"type": "Expression"
 					}
 				}
+			},
+			{
+				"name": "act_insert_lookup_metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "act_Web2",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzurePostgreSqlSource",
+						"query": {
+							"value": "INSERT INTO formula1.formula1_metadata_table (job_id,job_name,task_name,status,start_time) VALUES ('@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}','PL_INGEST_API_DATA','RACES_API','In-Progress','@{variables('start_time')}');\n\nselect job_id from formula1.formula1_metadata_table;",
+							"type": "Expression"
+						},
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_POSTGREYS_SQL_DATABASE",
+						"type": "DatasetReference"
+					}
+				}
 			}
 		],
 		"variables": {
