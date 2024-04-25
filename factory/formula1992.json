@@ -1,0 +1,9 @@
+{
+	"name": "formula1992",
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "6e450ed5-f184-4f40-a47f-c3759c0c7b79",
+		"tenantId": "b127d358-0819-4585-86dc-16480dd0eda2"
+	}
+}
