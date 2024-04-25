@@ -212,7 +212,7 @@
 					"source": {
 						"type": "AzurePostgreSqlSource",
 						"query": {
-							"value": "INSERT INTO formulaonerace_db.formulaone_metadata_table (job_id,job_name,task_name,status,start_time) VALUES ('@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}','PL_INGEST_API_DATA','DRIVERS_API','In-Progress','@{variables('start_time')}');\n\nselect job_id from formulaonerace_db.formulaone_metadata_table;",
+							"value": "INSERT INTO formula1.formula1_metadata_table (job_id,job_name,task_name,status,start_time) VALUES ('@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}','PL_INGEST_API_DATA','DRIVERS_API','In-Progress','@{variables('start_time')}');\n\nselect job_id from formula1.formula1_metadata_table;",
 							"type": "Expression"
 						},
 						"partitionOption": "None"
@@ -263,7 +263,7 @@
 					"source": {
 						"type": "AzurePostgreSqlSource",
 						"query": {
-							"value": "UPDATE formulaonerace_db.formulaone_metadata_table\nSET status='success',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='DRIVERS_API';\n\nselect job_id from formulaonerace_db.formulaone_metadata_table;",
+							"value": "UPDATE formula1.formula1_metadata_table\nSET status='success',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='DRIVERS_API';\n\nselect job_id from formula1.formula1_metadata_table;",
 							"type": "Expression"
 						},
 						"partitionOption": "None"
@@ -297,7 +297,7 @@
 					"source": {
 						"type": "AzurePostgreSqlSource",
 						"query": {
-							"value": "UPDATE formulaonerace_db.formulaone_metadata_table\nSET status='failed',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='DRIVERS_API';\n\nselect job_id from formulaonerace_db.formulaone_metadata_table;",
+							"value": "UPDATE formula1.formula1_metadata_table\nSET status='failed',\n    end_time='@{utcNow('yyyy-MM-dd HH:mm:ss')}'\nwhere job_id='@{formatDateTime(variables('start_time'),'yyyyMMddHHmmss')}' and task_name='DRIVERS_API';\n\nselect job_id from formula1.formula1_metadata_table;",
 							"type": "Expression"
 						},
 						"partitionOption": "None"
